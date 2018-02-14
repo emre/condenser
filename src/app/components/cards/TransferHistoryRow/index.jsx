@@ -24,6 +24,8 @@ class TransferHistoryRow extends React.Component {
         const data = op[1].op[1];
 
         /*  all transfers involve up to 2 accounts, context and 1 other. */
+        let message = '';
+
         let description_start = '';
         let other_account = null;
         let description_end = '';
@@ -33,26 +35,48 @@ class TransferHistoryRow extends React.Component {
 
             if (data.from === context) {
                 if (data.to === '') {
-                    description_start +=
-                        tt('g.transfer') + amount + tt('g.to') + 'STEEM POWER';
+                    message = tt(
+                        'transfer_history_row.transfer_to_vesting.from_self.no_to',
+                        { amount }
+                    );
+                    // tt('g.transfer') + amount + tt('g.to') + 'STEEM POWER';
                 } else {
-                    description_start +=
-                        tt('g.transfer') + amount + ' STEEM POWER' + tt('g.to');
-                    other_account = data.to;
+                    message = (
+                        <span>
+                            {tt(
+                                'transfer_history_row.transfer_to_vesting.from_self.to_someone',
+                                { amount }
+                            )}
+                            {otherAccountLink(data.to)}
+                        </span>
+                    );
+                    // tt('g.transfer') + amount + ' STEEM POWER' + tt('g.to');
                 }
             } else if (data.to === context) {
-                description_start +=
-                    tt('g.receive') + amount + ' STEEM POWER' + tt('g.from');
-                other_account = data.from;
+                message = (
+                    <span>
+                        {tt(
+                            'transfer_history_row.transfer_to_vesting.to_self',
+                            { amount }
+                        )}
+                        {otherAccountLink(data.from)}
+                    </span>
+                );
+                // tt('g.receive') + amount + ' STEEM POWER' + tt('g.from');
             } else {
-                description_start +=
-                    tt('g.transfer') +
-                    amount +
-                    ' STEEM POWER' +
-                    tt('g.from') +
-                    data.from +
-                    tt('g.to');
-                other_account = data.to;
+                message = (
+                    <span>
+                        {tt(
+                            'transfer_history_row.transfer_to_vesting.from_user_to_user',
+                            {
+                                amount,
+                                from: data.from,
+                            }
+                        )}
+                        {otherAccountLink(data.to)}
+                    </span>
+                );
+                // tt('g.transfer') + amount + ' STEEM POWER' + tt('g.from') +data.from + tt('g.to');
             }
         } else if (
             /^transfer$|^transfer_to_savings$|^transfer_from_savings$/.test(
@@ -62,60 +86,121 @@ class TransferHistoryRow extends React.Component {
             // transfer_to_savings
             const fromWhere =
                 type === 'transfer_to_savings'
-                    ? tt('transferhistoryrow_jsx.to_savings')
+                    ? 'to_savings'
                     : type === 'transfer_from_savings'
-                      ? tt('transferhistoryrow_jsx.from_savings')
-                      : '';
+                      ? 'from_savings'
+                      : 'not_savings';
 
             if (data.from === context) {
-                description_start +=
-                    tt('g.transfer') +
-                    `${fromWhere} ${data.amount}` +
-                    tt('g.to');
-                other_account = data.to;
+                // Semi-bad behavior - passing `type` to translation engine -- @todo better somehow?
+                // type can be to_savings, from_savings, or not_savings
+                // Also we can't pass React elements (link to other account) so its order is fixed :()
+                message = (
+                    <span>
+                        {tt(
+                            [
+                                'transfer_history_row',
+                                'transfer_to_savings',
+                                'from_self',
+                                type,
+                            ],
+                            { amount: data.amount }
+                        )}
+                        {otherAccountLink(data.to)}
+                        {data.request_id &&
+                            tt('transfer_history_row.request_id', {
+                                request_id: data.request_id,
+                            })}
+                    </span>
+                );
+                // tt('g.transfer') + `${fromWhere} ${data.amount}` + tt('g.to');
             } else if (data.to === context) {
-                description_start +=
-                    tt('g.receive') +
-                    `${fromWhere} ${data.amount}` +
-                    tt('g.from');
-                other_account = data.from;
+                message = (
+                    <span>
+                        {tt(
+                            [
+                                'transfer_history_row',
+                                'transfer_to_savings',
+                                'to_self',
+                                type,
+                            ],
+                            { amount: data.amount }
+                        )}
+                        {otherAccountLink(data.from)}
+                        {data.request_id &&
+                            tt('transfer_history_row.request_id', {
+                                request_id: data.request_id,
+                            })}
+                    </span>
+                );
+                // tt('g.receive') + `${fromWhere} ${data.amount}` + tt('g.from');
             } else {
-                description_start +=
-                    tt('g.transfer') +
-                    `${fromWhere} ${data.amount}` +
-                    tt('g.from');
-                other_account = data.from;
-                description_end += tt('g.to') + data.to;
+                // Removing the `from` link from this one -- only one user is linked anyways.
+                message = (
+                    <span>
+                        {tt(
+                            [
+                                'transfer_history_row',
+                                'transfer_to_savings',
+                                'to_someone_from_someone',
+                                type,
+                            ],
+                            {
+                                amount: data.amount,
+                                from: data.from,
+                                to: data.to,
+                            }
+                        )}
+                        {data.request_id &&
+                            tt('transfer_history_row.request_id', {
+                                request_id: data.request_id,
+                            })}
+                    </span>
+                );
+                // tt('g.transfer') + `${fromWhere} ${data.amount}` + tt('g.from');
+                //other_account = data.from;
+                //description_end += tt('g.to') + data.to;
             }
-            if (data.request_id != null)
-                description_end += ` (${tt('g.request')} ${data.request_id})`;
         } else if (type === 'cancel_transfer_from_savings') {
-            description_start += `${tt(
-                'transferhistoryrow_jsx.cancel_transfer_from_savings'
-            )} (${tt('g.request')} ${data.request_id})`;
+            message = tt('transfer_history_row.cancel_transfer_from_savings', {
+                request_id: data.request_id,
+            });
+            // `${tt('transferhistoryrow_jsx.cancel_transfer_from_savings')} (${tt('g.request')} ${data.request_id})`;
         } else if (type === 'withdraw_vesting') {
             if (data.vesting_shares === '0.000000 VESTS')
-                description_start += tt(
-                    'transferhistoryrow_jsx.stop_power_down'
-                );
+                message = tt('transferhistoryrow_jsx.stop_power_down');
             else
-                description_start +=
-                    tt('transferhistoryrow_jsx.start_power_down_of') +
-                    ' ' +
-                    powerdown_vests +
-                    ' STEEM';
+                message = tt('transfer_history_row.withdraw_vesting', {
+                    powerdown_vests,
+                });
+            // tt('transferhistoryrow_jsx.start_power_down_of') + ' ' + powerdown_vests + ' STEEM';
         } else if (type === 'curation_reward') {
-            description_start += `${curation_reward} STEEM POWER` + tt('g.for');
-            other_account = data.comment_author + '/' + data.comment_permlink;
+            const linkToComment =
+                data.comment_author + '/' + data.comment_permlink;
+            message = (
+                <span>
+                    {tt('transfer_history_row.curation_reward', {
+                        curation_reward,
+                    })}
+                    {otherAccountLink(linkToComment)}
+                </span>
+            );
+            // `${curation_reward} STEEM POWER` + tt('g.for');
         } else if (type === 'author_reward') {
             let steem_payout = '';
             if (data.steem_payout !== '0.000 STEEM')
                 steem_payout = ', ' + data.steem_payout;
-            description_start += `${data.sbd_payout}${steem_payout}, ${tt(
-                'g.and'
-            )} ${author_reward} STEEM POWER ${tt('g.for')}`;
-            other_account = data.author + '/' + data.permlink;
-            description_end = '';
+            message = (
+                <span>
+                    {tt('transfer_history_row.author_reward', {
+                        author_reward,
+                        steem_payout,
+                        sbd_payout: data.sbd_payout,
+                    })}
+                    {otherAccountLink(data.author + '/' + data.permlink)}
+                </span>
+            );
+            // `${data.sbd_payout}${steem_payout}, ${tt( 'g.and' )} ${author_reward} STEEM POWER ${tt('g.for')}`;
         } else if (type === 'claim_reward_balance') {
             const rewards = [];
             if (parseFloat(data.reward_steem.split(' ')[0]) > 0)
@@ -125,53 +210,75 @@ class TransferHistoryRow extends React.Component {
             if (parseFloat(data.reward_vests.split(' ')[0]) > 0)
                 rewards.push(`${reward_vests} STEEM POWER`);
 
-            let rewards_str;
             switch (rewards.length) {
                 case 3:
-                    rewards_str = `${rewards[0]}, ${rewards[1]} and ${
-                        rewards[2]
-                    }`;
+                    message = tt(
+                        'transfer_history_row.claim_reward_balance.three_rewards',
+                        {
+                            first_reward: rewards[0],
+                            second_reward: rewards[1],
+                            third_reward: rewards[2],
+                        }
+                    );
+                    // `${rewards[0]}, ${rewards[1]} and ${ rewards[2] }`;
                     break;
                 case 2:
-                    rewards_str = `${rewards[0]} and ${rewards[1]}`;
+                    message = tt(
+                        'transfer_history_row.claim_reward_balance.two_rewards',
+                        { first_reward: rewards[0], second_reward: rewards[1] }
+                    );
+                    // `${rewards[0]} and ${rewards[1]}`;
                     break;
                 case 1:
-                    rewards_str = `${rewards[0]}`;
+                    message = tt(
+                        'transfer_history_row.claim_reward_balance.one_reward',
+                        { reward: rewards[0] }
+                    );
+                    // `${rewards[0]}`;
                     break;
             }
-
-            description_start += `Claim rewards: ${rewards_str}`;
-            description_end = '';
         } else if (type === 'interest') {
-            description_start += `${tt(
-                'transferhistoryrow_jsx.receive_interest_of'
-            )} ${data.interest}`;
+            message = tt('transfer_history_row.interest', {
+                interest: data.interest,
+            });
+            // `${tt( 'transferhistoryrow_jsx.receive_interest_of' )} ${data.interest}`;
         } else if (type === 'fill_convert_request') {
-            description_start += `Fill convert request: ${data.amount_in} for ${
-                data.amount_out
-            }`;
+            message = tt('transfer_history_row.fill_convert_request', {
+                amount_in: data.amount_in,
+                amount_out: data.amount_out,
+            });
+            // `Fill convert request: ${data.amount_in} for ${ data.amount_out }`;
         } else if (type === 'fill_order') {
             if (data.open_owner == context) {
                 // my order was filled by data.current_owner
-                description_start += `Paid ${data.open_pays} for ${
-                    data.current_pays
-                }`;
+                message = tt(
+                    'transfer_history_row.fill_order.filled_by_current_owner',
+                    {
+                        open_pays: data.open_pays,
+                        current_pays: data.current_pays,
+                    }
+                );
+                // `Paid ${data.open_pays} for ${  data.current_pays }`
             } else {
                 // data.open_owner filled my order
-                description_start += `Paid ${data.current_pays} for ${
-                    data.open_pays
-                }`;
+                message = tt(
+                    'transfer_history_row.fill_order.open_owner_filled_my_order',
+                    {
+                        open_pays: data.open_pays,
+                        current_pays: data.current_pays,
+                    }
+                );
+                // `Paid ${data.current_pays} for ${ data.open_pays }`;
             }
         } else if (type === 'comment_benefactor_reward') {
-            let steem_payout = '';
-            if (data.steem_payout !== '0.000 STEEM')
-                steem_payout = ', ' + data.steem_payout;
-            description_start += `${benefactor_reward} STEEM POWER for ${
-                data.author
-            }/${data.permlink}`;
-            description_end = '';
+            message = tt('transfer_history_row.comment_benefactor_reward', {
+                benefactor_reward,
+                author: data.author,
+                permlink: data.permlink,
+            });
+            // `${benefactor_reward} STEEM POWER for ${ data.author }/${data.permlink}`;
         } else {
-            description_start += JSON.stringify({ type, ...data }, null, 2);
+            message = JSON.stringify({ type, ...data }, null, 2);
         }
         // <Icon name="clock" className="space-right" />
         return (
@@ -183,11 +290,7 @@ class TransferHistoryRow extends React.Component {
                     className="TransferHistoryRow__text"
                     style={{ maxWidth: '40rem' }}
                 >
-                    {description_start}
-                    {other_account && (
-                        <Link to={`/@${other_account}`}>{other_account}</Link>
-                    )}
-                    {description_end}
+                    {message}
                 </td>
                 <td
                     className="show-for-medium"
@@ -199,6 +302,10 @@ class TransferHistoryRow extends React.Component {
         );
     }
 }
+
+const otherAccountLink = username => (
+    <Link to={`/@${username}`}>{username}</Link>
+);
 
 export default connect(
     // mapStateToProps

@@ -62,17 +62,17 @@ storiesOf('Cards', module)
                                             138.69
                                         )} STEEM`,
                                         to: select(
-                                            'to user',
+                                            'to user (affects transfer_to_vesting)',
                                             ['userA', 'userB', 'userC'],
                                             'userA'
                                         ),
                                         from: select(
-                                            'from user',
+                                            'from user (affects transfer_to_vesting)',
                                             ['userA', 'userB', 'userC'],
                                             'userA'
                                         ),
                                         vesting_shares: `${text(
-                                            'vesting_shares',
+                                            'vesting_shares (affects withdraw_vesting)',
                                             '0.000000'
                                         )} VESTS`,
                                         reward_vests: `${text(
@@ -118,6 +118,7 @@ storiesOf('Cards', module)
                                         ]),
                                         open_pays: 'open_pays amount',
                                         current_pays: 'current_pays amount',
+                                        memo: 'memo here',
                                     },
                                 ],
                                 timestamp: date('date', new Date('1 Jul 2016')),
