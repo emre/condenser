@@ -29,32 +29,25 @@ class TransferHistoryRow extends React.Component {
         let description_end = '';
 
         if (type === 'transfer_to_vesting') {
+            const amount = data.amount.split(' ')[0];
+
             if (data.from === context) {
                 if (data.to === '') {
                     description_start +=
-                        tt('g.transfer') +
-                        data.amount.split(' ')[0] +
-                        tt('g.to') +
-                        'STEEM POWER';
+                        tt('g.transfer') + amount + tt('g.to') + 'STEEM POWER';
                 } else {
                     description_start +=
-                        tt('g.transfer') +
-                        data.amount.split(' ')[0] +
-                        ' STEEM POWER' +
-                        tt('g.to');
+                        tt('g.transfer') + amount + ' STEEM POWER' + tt('g.to');
                     other_account = data.to;
                 }
             } else if (data.to === context) {
                 description_start +=
-                    tt('g.receive') +
-                    data.amount.split(' ')[0] +
-                    ' STEEM POWER' +
-                    tt('g.from');
+                    tt('g.receive') + amount + ' STEEM POWER' + tt('g.from');
                 other_account = data.from;
             } else {
                 description_start +=
                     tt('g.transfer') +
-                    data.amount.split(' ')[0] +
+                    amount +
                     ' STEEM POWER' +
                     tt('g.from') +
                     data.from +
